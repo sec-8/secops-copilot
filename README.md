@@ -175,6 +175,5 @@ MIT
 
 ## 🤝 配套仓库
 
-- **前端**：[secops-copilot-web](https://github.com/xxx/secops-copilot-web)
+- **前端**：[secops-copilot-web](https://github.com/sec-8/secops-copilot-web)
 - **演示 Demo GIF**：[链接待补]
-- **详细笔记**（不公开）：[内部链接]
