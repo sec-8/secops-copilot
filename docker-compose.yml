@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  backend:
+    build: .           # Dockerfile 在 backend 根
+    container_name: secops-copilot-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-host.docker.internal:11434/v1}
+      - OLLAMA_MODEL=qwen3:8b
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      - DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-deepseek-v4-flash}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - LANGFUSE_HOST=${LANGFUSE_HOST:-https://cloud.langfuse.com}
+      - LANGFUSE_SINK_ENABLED=${LANGFUSE_SINK_ENABLED:-true}
+    volumes:
+      # 知识库：读写（首次启动 BM25/LanceDB 懒构建需要写）
+      - ./knowledge:/app/knowledge
+      # 向量库：读写（懒加载可能写）
+      - ./data/lancedb:/app/data/lancedb
+      # 代码：挂载覆盖（开发模式热更）
+      - ./app:/app/app
+      - ./rag:/app/rag
+      - ./observability:/app/observability
+      # 日志：挂载出来便于查 trace
+      - ./logs:/app/logs
+    extra_hosts:
+      # Windows Docker Desktop 自动支持，但显式声明保 Linux 容器兼容
+      - "host.docker.internal:host-gateway"
+    # 注意：健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3

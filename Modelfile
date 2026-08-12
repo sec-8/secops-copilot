@@ -1,0 +1,2 @@
+FROM mxbai-embed-large
+PARAMETER num_ctx 4096
