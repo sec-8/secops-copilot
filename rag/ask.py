@@ -123,7 +123,7 @@ class RAGAsker:
 
         if current_trace:
             with current_trace.span("llm", "RAG生成") as llm_span:
-                llm_span.set_input(messages)  # W6 Day2: input 在循环前定型
+                llm_span.set_input(messages)  # input 在循环前定型
                 
                 try:
                     result = call_llm_json(messages, max_retries=1) # max_retries=1 首次+重试一次
@@ -147,7 +147,7 @@ class RAGAsker:
             except Exception as e:
                 error_msg = str(e)
 
-        # 5. 解析 raw（W6 Day2: raw 兜底处理）
+        # 5. 解析 raw（兜底处理）
         if result is None:
             return {
                 "answer": "LLM 调用失败：所有 tier 都失败",

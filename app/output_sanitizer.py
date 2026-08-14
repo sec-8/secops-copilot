@@ -1,10 +1,10 @@
 """
-输出卫生 —— W6 Day5 A.1
-W6 Day4 实跑发现 B3/C1/C2 的 final_answer 暴露：
+输出卫生
+实跑发现 B3/C1/C2 的 final_answer 暴露：
 - 工具列表（query_ip_reputation / search_knowledge / parse_log_fields）
 - 系统路径（J:\programs\secops-copilot\.env）
 - 系统命令（cat / type / Get-Content）
-【设计决策】（2026-08-09 三问引导）：
+【设计决策】：
   Q1：单文件（可复用 + 可单测 + 关注点分离）
   Q2：静默替换（不附加提示，对标 OpenAI 安全过滤）
   Q3：黑名单（精确字典替换，不做白名单）
@@ -12,7 +12,7 @@ W6 Day4 实跑发现 B3/C1/C2 的 final_answer 暴露：
   - 工具名  →  占位符"某个内部工具"
   - 系统路径  →  占位符"<系统路径>"
   - 系统命令  →  占位符"<系统命令>"
-【同 W5.6 双保险范式】（prompt 软约束 + 代码层 post-check）：
+【双保险范式】（prompt 软约束 + 代码层 post-check）：
   本文件是"代码层 post-check"——已加 SYSTEM prompt 约束不生效，代码兜底。
 【不破 trace】：
   filter 在 yield final_answer 之前做，tracer 仍能记录原 msg.content
@@ -37,7 +37,7 @@ TOOL_NAME_MAP = {
 # Windows 绝对路径模式 ----------
 # J:\..., C:\..., D:\... 一直到 Z:\...
 # 路径字符允许：字母数字 . _ - ，遇到 \ + 字母或空格就停
-# TODO Q2 已知限制：中文标点（、，；。）不在排除列表，贪婪会吞 cat/命令
+# 已知限制：中文标点（、，；。）不在排除列表，贪婪会吞 cat/命令
 # 例：J:\programs\.env，cat  →  路径 regex 会吞到 "cat" 前空格，整段被路径占位符替换
 # 严重度低：LLM 实际极少同时输出"路径+中文标点+命令"
 PATH_PATTERN = re.compile(r"[A-Za-z]:\\(?:[^\s\"'<>|*?\r\n\\])+")
@@ -62,29 +62,7 @@ COMMAND_PATTERNS = [re.compile(p) for p in COMMAND_PATTERN]
 TOOL_PATTERNS = [re.compile(rf"\b{re.escape(name)}\b") for name in TOOL_NAME_MAP]  
 
 def sanitize_output(text: str) -> tuple[str, list[str]]:
-    """输出卫生：替换 final_answer 中的工具名/系统路径/系统命令为占位符
-    
-    Args:
-        text: LLM 原始 final_answer 字符串
-    
-    Returns:
-        (safe_text, sanitized_terms)
-        - safe_text: 替换后的字符串（静默替换，不附加提示）
-        - sanitized_terms: 被替换的术语列表（去重 + 保持原顺序，用于 trace 标签）
-    
-    Examples:
-        >>> sanitize_output("调用 query_ip_reputation 工具")
-        ('调用 某个内部工具 工具', ['query_ip_reputation'])
-        >>> sanitize_output("读 J:\\\\programs\\\\.env")
-        ('读 <系统路径>', ['J:\\\\programs\\\\.env'])
-        >>> sanitize_output("用 cat 看文件")
-        ('用 <系统命令> 看文件', ['cat'])
-    
-    Edge cases:
-        - text 为空 → 返回 ("", [])
-        - 工具名大写不替换（精确匹配）or 全部转小写比较（你决定）
-        - 重叠匹配（如工具名+路径都在一句话里）→ 都替换，去重时保留顺序
-    """
+    """输出卫生：替换 final_answer 中的工具名/系统路径/系统命令为占位符"""
     if not text:
         return text, []
     
@@ -133,7 +111,6 @@ def sanitize_output(text: str) -> tuple[str, list[str]]:
     
     return safe_text, sanitized_terms
 
-# ---------- 6. 单元自测 ----------
 if __name__ == "__main__":
     test_cases = [
         # 应该被清洗

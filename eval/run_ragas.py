@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-W4 收官：RAGAS 评测脚本
+RAGAS 评测脚本
 --------------------------------------------------
 思路（拆开评，别互相污染）：
   - 有据题（ground_truth != 拒答话术）→ 跑 RAGAS 三指标（faithfulness / answer_relevancy / context_precision）
@@ -37,11 +37,8 @@ from rag.hybrid import HybridRetriever
 # 拒答话术（用来区分有据题 / 无据题）
 REFUSAL_TEXT = "知识库未收录相关内容，无法回答这个问题"
 
-# ============================================================
-# 决策点 TODO ①：badcase 判定阈值
-# 单条样本某指标低于多少，就落盘当 badcase 复盘？
-BADCASE_THRESHOLD = 0.55  # TODO: 填一个 0~1 的数（建议 0.5 左右，想想为什么）
-# ============================================================
+# 单条样本某指标低于多少就落盘当 badcase 复盘
+BADCASE_THRESHOLD = 0.55  # 0~1 的数
 
 
 def load_dataset(path: Path):
@@ -152,18 +149,16 @@ def main():
     
     judge_llm, judge_emb = build_judge_and_embedding()
 
-    # ============================================================
-    # 决策点 TODO ②：选指标
-    # 有据题要跑哪几个指标？下面三个是否都用？各自评什么想清楚再留。
-    # （提示：context_precision 需要 ground_truth；faithfulness/answer_relevancy 需要 answer+contexts）
+
+    # context_precision 需要 ground_truth；faithfulness/answer_relevancy 需要 answer+contexts）
     metrics = [
-        faithfulness,        # TODO 确认：评什么？contexts
-        answer_relevancy,    # TODO 确认：评什么？answer
-        context_precision,   # TODO 确认：评什么？ground_truth
+        faithfulness,        # 评 contexts
+        answer_relevancy,    # 评 answer
+        context_precision,   # 评 ground_truth
     ]
     # ============================================================
 
-    # ---- 1) 有据题跑 RAGAS ----
+    # 有据题跑 RAGAS
     print("\n【1/2】有据题 → RAGAS 三指标")
     ds = run_system_on_grounded(asker, grounded)
     result = evaluate(ds, metrics=metrics, llm=judge_llm, embeddings=judge_emb)
@@ -176,8 +171,6 @@ def main():
     df.to_csv(out_csv, index=False, encoding="utf-8-sig")
     print(f"明细已存：{out_csv}")
 
-    # ============================================================
-    # 决策点 TODO ③：badcase 怎么挑？
     # 用哪个指标 < BADCASE_THRESHOLD 判定为 badcase？还是任一指标低就算？
     # 把挑出来的 badcase 打印出来，方便复盘。
     fne = result["faithfulness"]

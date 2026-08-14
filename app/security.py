@@ -1,4 +1,4 @@
-"""工具治理模块 —— W3 护城河：白名单、dry-run、确认token"""
+"""工具治理模块 —— 白名单、dry-run、确认token"""
 import os
 from pathlib import Path
 from functools import wraps

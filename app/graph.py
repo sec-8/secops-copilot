@@ -1,4 +1,4 @@
-"""W3：把 W2 手写 ReAct 循环迁移为 LangGraph 状态图"""
+"""把手写 ReAct 循环迁移为 LangGraph 状态图"""
 import json
 import operator
 from typing import Annotated, TypedDict
@@ -40,7 +40,7 @@ def msg_to_dict(msg) -> dict:
         ]
     return result
 
-# ② agent 节点：调模型（对应你 W2 的"想"）
+# ② agent 节点：调模型（对应Agent的"想"）
 def agent_node(state: AgentState) -> dict:
     args = settings.primary_client_args()
     client = OpenAI(api_key=args["api_key"], base_url=args["base_url"])
@@ -71,7 +71,7 @@ def agent_node(state: AgentState) -> dict:
         msg = resq.choices[0].message
         return {"messages": [msg_to_dict(msg)]}
 
-# ③ tools 节点：执行工具（对应你 W2 的"做+观察"）
+# ③ tools 节点：执行工具（对应Agent的"做+观察"）
 def tools_node(state: AgentState) -> dict:
     last_msg = state["messages"][-1]
     tool_messages = []
@@ -106,7 +106,7 @@ def tools_node(state: AgentState) -> dict:
         })
     return {"messages": tool_messages}
 
-# ④ 路由函数：条件边的核心（对应你 A6 的"判断走哪条边"）
+# ④ 路由函数：条件边的核心
 def should_contiune(state: AgentState) -> str:
     last_msg = state["messages"][-1]
     if not last_msg.get("tool_calls"):

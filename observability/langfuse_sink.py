@@ -1,14 +1,11 @@
 """
-Langfuse v4 sink —— W6 Day1
+Langfuse v4 sink
 设计：
 - 收 tracer event dict，按 type 分发到 Langfuse SDK
 - 内部维护 _active_observations: dict[span_id, obs_obj] 映射嵌套关系
 - Langfuse 写入失败 → emit_event 记录 + 写 JSONL
 - Langfuse 未启用或 import 失败 → 直接 return（tracer.py 仍写 JSONL）
 """
-import os
-import time
-from typing import Optional
 from app.config import settings
 
 # === 懒加载 client ===

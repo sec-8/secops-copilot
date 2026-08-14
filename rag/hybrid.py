@@ -30,6 +30,8 @@ QUERY_ALIAS = {
     "路径攻击": "路径遍历 目录穿越",
     "prompt注入": "prompt注入 prompt 注入 提示词注入",
     "prompt 注入": "prompt注入 prompt 注入 提示词注入",
+    "SQL 注入": "SQL注入 SQL 注入 spl注入 spl 注入",
+    "SQL注入": "SQL注入 SQL 注入 spl注入 spl 注入",
 }
 
 RRF_K = 60  # RRF 常数，削弱头部名次碾压，标准取 60

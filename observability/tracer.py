@@ -1,5 +1,5 @@
 """
-轻量 Trace 系统骨架（W5.5 线 3）
+轻量 Trace 系统骨架
 
 设计：
 - contextvars 隐式传递 trace（非侵入，并发安全）
@@ -29,7 +29,7 @@ span 类型约定：
 """
 
 import json
-import os  # W6 Day1: 读 Langfuse 开关环境变量
+import os  # 读 Langfuse 开关环境变量
 import time
 import uuid
 import contextvars  # 保留 import 仅为说明历史演进（list stack 模式后不再使用）
@@ -39,10 +39,10 @@ from threading import Lock
 # 不在顶部 import langfuse_sink（防 langfuse 装不上时 tracer 都加载不了）
 # 所有 sink 调用都走函数内 import（_is_langfuse_enabled / _write_line 里）
 
-# ===== trace 上下文（list stack 模式，W6 Day2 步骤3 改造）=====
+# ===== trace 上下文（list stack 模式）=====
 # 原设计：contextvars —— 跨 SSE 流式 generator 推进时会跨 worker thread，
 # anyio 调用 token.reset() 抛 'Token was created in a different Context'。
-# 新设计：list stack + 模块级锁 —— W6 是单线程场景，list 的 push/pop 行为
+# 新设计：list stack + 模块级锁 —— 项目是单线程场景，list 的 push/pop 行为
 # 跟 contextvar 的 set/reset 等价（后进先出），但不受 Context 限制。
 # 调用方零改动：tracer.current_trace() / trace.span() / emit_event() 接口不变。
 _trace_stack: list = []     # 当前活跃的 Trace（栈顶为最新）
@@ -82,7 +82,7 @@ class Span:
         self.output = None                  # 专给 LLM completion 用
         
     def start(self, trace_id:str) -> "Span":
-        """记录 span 开始，写入 span_start 事件（W6 Day1: 加 parent_id）"""
+        """记录 span 开始，写入 span_start 事件,要加 parent_id"""
         if self._start_time is not None:
             raise RuntimeError(f"Span {self.span_id} 已经开始")
         self._start_time = time.time()
@@ -90,15 +90,15 @@ class Span:
             "type": "span_start",
             "trace_id": trace_id,
             "span_id": self.span_id,
-            "parent_id": self.parent_id,   # W6 Day1: sink 重建嵌套需要
+            "parent_id": self.parent_id,   # sink 重建嵌套需要
             "name": self._name,
-            "span_type": self.span_type,    # W6 Day1: 顺便记 type（之前没写盘）
+            "span_type": self.span_type,    #  顺便记 type（之前没写盘）
             "timestamp": self._start_time
         })
         return self
     
     def end(self) -> None:
-        """结束 span，写入 span_end 事件（含标签和延迟）（W6 Day1: 加 parent_id）"""
+        """结束 span，写入 span_end 事件（含标签和延迟）"""
         if self._ended:
             return
         if self._start_time is None:
@@ -111,12 +111,12 @@ class Span:
             "type": "span_end",
             "span_id": self.span_id,
             "trace_id": trace_id,
-            "parent_id": self.parent_id,   # W6 Day1: sink 重建嵌套需要
-            "span_type": self.span_type,    # W6 Day1: 同步
+            "parent_id": self.parent_id,   # sink 重建嵌套需要
+            "span_type": self.span_type,    # 同步
             "latency_ms": latency_ms,
             "tags": self.tags.copy(),
-            "input": self.input,      # W6 Day2: 加这行（你加）
-            "output": self.output,    # W6 Day2: 加这行（你加）
+            "input": self.input,      
+            "output": self.output,   
             "timestamp": time.time()
         })
     
@@ -126,8 +126,8 @@ class Span:
         return self
     
     def set_input(self, value) -> "Span":
-        """W6 Day2: 写 Langfuse input 字段（专给 prompt 用）"""
-        """设置 span 的 input（W6 Day2: 长 input 自动截断到 10K 字符）"""
+        """写 Langfuse input 字段（专给 prompt 用）"""
+        """设置 span 的 input（长 input 自动截断到 10K 字符）"""
         s = str(value)
         if len(s) > 10000:
             value = s[:10000] + "...[truncated]"
@@ -135,7 +135,7 @@ class Span:
         return self
             
     def set_output(self, value) -> "Span":
-        """W6 Day2: 写 Langfuse output 字段（专给 completion 用）"""  
+        """写 Langfuse output 字段（专给 completion 用）"""  
         self.output = value
         return self 
     
@@ -262,7 +262,7 @@ class Tracer:
             "tags": tags.copy()
         })
         
-# ===== W6 Day1: Langfuse sink 开关 =====
+# ===== Langfuse sink 开关 =====
 # 不在这里直接 import sink（防循环依赖 + 让 sink 失败不破 tracer）
 def _is_langfuse_enabled() -> bool:
     """查 Langfuse sink 是否可用：环境变量 + import 成功 + 三个 key 都填了"""
@@ -283,7 +283,7 @@ _WRITE_LOCK = Lock()
 
 def _write_line(data: dict) -> None:
     """线程安全地追加一行 JSON 到 trace.jsonl
-    W6 Day1 改造：先尝试写 Langfuse（不破 JSONL），失败/未启用走双写
+    先尝试写 Langfuse（不破 JSONL），失败/未启用走双写
     """
     # 1) 尝试写 Langfuse（失败降级，tracer 仍能写 JSONL）
     if _is_langfuse_enabled():
