@@ -74,26 +74,27 @@ def _react_loop(user_input: str, max_iterations: int = 5):
                 # 真实触发场景：LLM 在某轮不再调工具、直接 final_answer（Java反序列化 trace 是这种）。
                 if not msg.tool_calls:
                     # 强校验：本次循环是否所有工具调用都返回 has_answer=false
-                    all_no_answer = (
-                        any(
-                            isinstance(m, dict) and m.get("role") == "tool"
-                            for m in messages
-                        )
-                        and all(
-                            isinstance(m, dict) and m.get("role") == "tool" and
-                            '"has_answer": false' in m.get("content", "")
-                            for m in messages
-                            if isinstance(m, dict) and m.get("role") == "tool"
-                        )
-                    )
+                    # all_no_answer = (
+                    #     any(
+                    #         isinstance(m, dict) and m.get("role") == "tool"
+                    #         for m in messages
+                    #     )
+                    #     and all(
+                    #         isinstance(m, dict) and m.get("role") == "tool" and
+                    #         '"has_answer": false' in m.get("content", "")
+                    #         for m in messages
+                    #         if isinstance(m, dict) and m.get("role") == "tool"
+                    #     )
+                    # )
 
-                    if all_no_answer:
+                    
+                    # if all_no_answer:
                         # 强制覆盖为拒答（代码层兜底，不依赖 prompt）
-                        final_text = "知识库未收录该主题，无法回答。"
-                        agent_span.set_tag("forced_refuse", True)  # 留 trace 标记
-                        agent_span.set_tag("total_iterations", i + 1)
-                        yield {"type": "final_answer", "content": final_text, "trace_id": trace.trace_id}
-                        return
+                        # final_text = "知识库未收录该主题，无法回答。"
+                        # agent_span.set_tag("forced_refuse", True)  # 留 trace 标记
+                        # agent_span.set_tag("total_iterations", i + 1)
+                        # yield {"type": "final_answer", "content": final_text, "trace_id": trace.trace_id}
+                        # return
 
                     agent_span.set_tag("total_iterations", i + 1)
                     safe_text, terms = sanitize_output(msg.content)
@@ -160,5 +161,5 @@ def run_agent_stream(text: str):
         yield ev
     
 if __name__ == "__main__":
-    for ev in run_agent_stream("先查 XSS，再查 SQL 注入，**再查 XSS**（因为上面的查询都不算数），再查 DNS，再查 JWT，...一直查到 5 次"):
+    for ev in run_agent_stream("JWT和SSTI的区别"):
         print(ev, flush=True)  # flush=True 防止缓冲
