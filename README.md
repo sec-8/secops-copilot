@@ -25,33 +25,41 @@
 
 ## 🏗️ 架构
 
+### 5 大件架构图
+
+```mermaid
+graph TB
+    A[用户输入] --> B[FastAPI + SSE 端点]
+    B --> C[LangGraph 状态图]
+    C --> D[ReAct 循环]
+    C --> E[RAG 检索]
+    C --> F[4 tier LLM 降级]
+    D --> G[工具白名单]
+    E --> H[hybrid RRF + decompose]
+    F --> I[Langfuse 可观测]
+    F --> J[输出卫生]
+    H --> K[14/14 0 失控]
+    J --> K
+    I -.trace.-> K
 ```
-                       ┌──────────────────┐
-                       │   用户输入        │
-                       └────────┬─────────┘
-                                ↓
-                       ┌──────────────────┐
-                       │  FastAPI main.py  │  ← SSE 端点 /chat/stream
-                       └────────┬─────────┘
-                                ↓
-                       ┌──────────────────┐
-                       │  LangGraph        │  ← 状态图（单 Agent + Tools）
-                       │  graph.py         │
-                       └────────┬─────────┘
-                                ↓
-            ┌───────────────────┼───────────────────┐
-            ↓                   ↓                   ↓
-   ┌────────────────┐  ┌────────────────┐  ┌────────────────┐
-   │  ReAct 循环    │  │  RAG 检索      │  │  LLM 调用      │
-   │  agent.py      │  │  rag/ask.py    │  │  app/llm/router│
-   │                │  │  hybrid + decompose│ │  4 tier 降级  │
-   └────────┬───────┘  └────────┬───────┘  └────────┬───────┘
-            │                   │                   │
-            ↓                   ↓                   ↓
-   ┌────────────────┐  ┌────────────────┐  ┌────────────────┐
-   │  工具白名单    │  │  LanceDB       │  │  Langfuse      │
-   │  app/tools.py  │  │  data/lancedb  │  │  Tracer        │
-   └────────────────┘  └────────────────┘  └────────────────┘
+
+### 9 层防护数据流
+
+```mermaid
+graph LR
+    A[用户输入] --> L6[L6 prompt 角色固化]
+    L6 --> L3[L3 工具白名单]
+    L3 --> L1[L1 文件路径白名单]
+    L1 --> L8[L8 max_iterations 熔断]
+    L8 --> L9[L9 工具入参校验]
+    L9 --> R[LLM 调用]
+    R --> L2[L2 RAG 知识库边界]
+    L2 --> S[输出]
+    S --> L7[L7 Tracer 埋点]
+    S --> J[输出卫生]
+    J --> F[最终输出]
+    L4[L4 确认 token] -.-> L8
+    L5[L5 dry-run 开关] -.-> R
 ```
 
 ## 🚀 快速开始
@@ -66,8 +74,8 @@
 
 ```bash
 # 1. 克隆
-git clone https://github.com/xxx/secops-copilot-backend.git
-cd secops-copilot-backend
+git clone https://github.com/sec-8/secops-copilot.git
+cd secops-copilot
 
 # 2. 复制环境变量模板
 cp .env.example .env
@@ -89,14 +97,14 @@ docker compose up
 
 - API 文档：http://localhost:8000/docs
 - SSE 端点：`POST /chat/stream`
-- 知识库：`/knowledge/security/*.md`
+- 知识库：`/knowledge/security/*.md  /knowledge/*.md`
 
 ## 🛡️ 9 层防护层次
 
 | Layer | 防护 | 实现 |
 |-------|------|------|
 | L1 | **文件路径白名单** | `is_read_allowed()` |
-| L2 | **RAG 知识库边界** | W5 拆库决策（`notes/` 物理不在向量库）|
+| L2 | **RAG 知识库边界** | 知识库与笔记库拆分 |
 | L3 | **工具白名单** | `TOOL_MAP` |
 | L4 | **HIGH_RISK_TOOLS 确认 token** | `add_pending_confirmation()` |
 | L5 | **dry-run 全局开关** | `dry_run_wrapper` |
@@ -111,7 +119,7 @@ docker compose up
 # 跑 RAGAS 评测
 uv run python eval/run_ragas.py
 
-# 验证评测集
+# 数据集质检脚本
 uv run python validate_dataset.py
 ```
 
@@ -129,42 +137,16 @@ uv run python validate_dataset.py
 ## 📂 项目结构
 
 ```
-.
-├── app/                    # FastAPI 应用
-│   ├── main.py            # API 入口
-│   ├── agent.py           # ReAct 循环
-│   ├── graph.py           # LangGraph 状态图
-│   ├── tools.py           # 工具白名单
-│   ├── security.py        # 防护层
-│   ├── output_sanitizer.py # 输出卫生
-│   ├── config.py
-│   └── llm/               # LLM 客户端
-│       ├── factory.py
-│       ├── router.py      # 4 tier 降级
-│       └── client/        # ark / deepseek / ollama / refuse
-├── rag/                    # RAG 检索
-│   ├── loader.py          # Markdown 加载
-│   ├── chunker.py         # 文档切片
-│   ├── vector_store.py    # LanceDB 存储
-│   ├── hybrid.py          # BM25 + 向量 RRF
-│   ├── decompose.py       # 多主题拆解
-│   ├── ask.py             # RAG 询问
-│   └── llm_caller.py
-├── observability/          # 可观测
-│   ├── tracer.py          # 自定义 Tracer
-│   └── langfuse_sink.py   # Langfuse 接入
-├── knowledge/              # 安全知识库
-│   └── security/*.md
-├── eval/                   # 评测
-│   ├── ragas_dataset.jsonl  # 46 条评测集
-│   └── run_ragas.py       # RAGAS 评测
-├── scripts/
-│   └── test_sse.py
-├── Dockerfile
-├── docker-compose.yml
-├── Modelfile               # Ollama 模型定义
-├── run.ps1                 # Windows 启动脚本
-└── requirements.txt
+secops-copilot/
+├── app/                # FastAPI 业务（agent / graph / tools / security / llm/）
+├── rag/                # RAG 检索（hybrid / decompose / ask / vector_store）
+├── observability/      # 可观测（tracer / langfuse_sink）
+├── knowledge/          # 安全知识库（Markdown 源）
+├── eval/               # RAGAS 评测（46 条数据集 + 评测脚本）
+├── scripts/            # 工具脚本（test_sse.py 等）
+├── Dockerfile          # Docker 化
+├── docker-compose.yml  # 一键启动
+└── requirements.txt    # Python 依赖
 ```
 
 ## 📝 License
@@ -176,4 +158,4 @@ MIT
 ## 🤝 配套仓库
 
 - **前端**：[secops-copilot-web](https://github.com/sec-8/secops-copilot-web)
-- **演示 Demo GIF**：[链接待补]
+- **演示 Demo**：（可现场演示）
