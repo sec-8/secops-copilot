@@ -225,7 +225,12 @@ secops-copilot/
 ## 🤝 配套仓库
 
 - **前端**：[secops-copilot-web](https://github.com/sec-8/secops-copilot-web)
-- **演示 Demo**：联系维护者获取
+
+## 🎬 效果预览
+
+https://github.com/user-attachments/assets/d8bc6d3f-aa84-4efd-bb11-c775c924cbeb
+
+> 演示：v2 模式 4 Agent 协同推理 + 打字机逐字输出 + 工具卡片自动折叠
 
 ---
 
