@@ -24,7 +24,7 @@ SYSTEM = """你是安全运营研判助手。面对告警、日志或安全问�
 当 search_knowledge 连续返回 has_answer=false 时，你必须直接输出"知识库未收录该主题，无法回答"，
 禁止使用任何通用安全知识、Web 安全常识、教科书知识来补充回答。"""
     
-def _react_loop(user_input: str, max_iterations: int = 5): 
+def _react_loop(user_input: str, max_iterations: int = 5, user_id: str = "anonymous", session_id: str = "default"): 
     """generator: yield 业务事件 dict"""
     router = get_router()  # 用 router（自动降级）替代 primary_client_args
     messages = [
@@ -35,7 +35,8 @@ def _react_loop(user_input: str, max_iterations: int = 5):
     with tracer.start_trace() as trace:
         with trace.span("agent", "ReAct研判") as agent_span:
             agent_span.set_tag("user_input", user_input[:200])
-            
+            agent_span.set_tag("user_id", user_id)
+            agent_span.set_tag("session_id", session_id)
             for i in range(max_iterations):
                 yield {"type": "thinking_start", "iteration": i + 1}  # ← 推送当前步骤
                 
@@ -148,7 +149,7 @@ def run_agent(text: str):
             return ev["content"]
     return "熔断"  # generator 耗尽也没 final_answer
 
-def run_agent_stream(text: str):
+def run_agent_stream(text: str, user_id: str = "anonymous", session_id: str = "default"):
     """
     Generator 版：每步 yield 一个 dict 事件
     事件类型：
@@ -157,9 +158,9 @@ def run_agent_stream(text: str):
       - {"type": "tool_result", "name": str, "result": dict}
       - {"type": "final_answer", "content": str}
     """
-    for ev in _react_loop(text, 10):
+    for ev in _react_loop(text, 10, user_id=user_id, session_id=session_id):
         yield ev
     
 if __name__ == "__main__":
-    for ev in run_agent_stream("JWT和SSTI的区别"):
+    for ev in run_agent_stream("JWT和SSTI的区别是什么？"):
         print(ev, flush=True)  # flush=True 防止缓冲

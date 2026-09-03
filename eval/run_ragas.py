@@ -115,6 +115,10 @@ def build_asker(retriever_type:str, store, chunked_docs):
         from rag.ask import RAGAsker
         hr = HybridRetriever(store, chunked_docs)
         return RAGAsker(hr, multi_query=True)
+    elif retriever_type == "lcel":
+        # V2Adapter 包 v2 LCEL chain
+        from eval.v2_adapter import V2Adapter
+        return V2Adapter()
     else:
         raise ValueError(f"未知检索器：{retriever_type}")
 
@@ -126,7 +130,8 @@ def main():
     # choices=[...]        → 白名单。只准传 vector 或 hybrid，传别的（如 --retriever xxx）argparse 直接报错退出，
     #                          这是免费的输入校验，省得你自己 if 判断
     # default="hybrid"     → 不传时的兜底值。你直接 python -m eval.run_ragas（不带--retriever）就等于跑 hybrid
-    parser.add_argument("--retriever", choices=["vector", "hybrid", "hybrid_multi"], default="hybrid")
+    # 加lcel方案  是 v1和v2的A/B 对照模式
+    parser.add_argument("--retriever", choices=["vector", "hybrid", "hybrid_multi", "lcel"], default="hybrid")
     # 真正执行解析：读 sys.argv（终端输入），按上面的规则填进 args 对象
     # 之后 args.retriever 就是最终值（传了用传的，没传用 default）
     args = parser.parse_args()
