@@ -15,10 +15,10 @@ data/
 logs/
 
 # ============================================
-# 3. 笔记（你的个人笔记 + 安全笔记）
+# 3. 笔记（你的个人笔记 + 安全笔记）/ 自己写的demos
 # ============================================
 notes/
-
+app_v2/demos/
 # ============================================
 # 4. 测试 / 缓存 / Python 字节码
 # ============================================
@@ -75,6 +75,21 @@ Thumbs.db
 eval/*
 !eval/run_ragas.py
 !eval/ragas_dataset.jsonl
+!eval/rag_dataset_sample.jsonl
+
+# ============================================
+# 9.5. scripts/ 精确控制（白名单机制）
+# ============================================
+# 只传关键探针 + 初始化脚本 + 4 个测试脚本：probe_v2_trace.py + init_db.sql
+# + test_all.py + test_v1.py + test_v2.py + test_history.py
+# 其它脚本（一次性调试 / 探索）全禁
+scripts/*
+!scripts/probe_v2_trace.py
+!scripts/init_db.sql
+!scripts/test_all.py
+!scripts/test_v1.py
+!scripts/test_v2.py
+!scripts/test_history.py
 
 # ============================================
 # 10. Docker 缓存（推荐）
