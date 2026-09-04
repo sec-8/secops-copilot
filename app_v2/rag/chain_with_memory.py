@@ -143,7 +143,7 @@ async def extract_facts(text: str, llm) -> list[dict]:
     [
         {{"key": "user_name", "value": "小明", "confidence": 0.95}},
         {{"key": "job", "value": "程序员", "confidence": 0.9}},
-        {{"key": "programming_languages", "value": "JavaScript, Python, Go"}},
+        {{"key": "programming_languages", "value": "JavaScript, Python, Go", "confidence": 0.91}},
     ]
     没有可提取的事实输出空数组 []
     """
