@@ -208,7 +208,7 @@ def build_graph(retriever, llm, ltm: LongTermMemory):
         5. 绝对禁止使用外部知识或常识来补充文档中缺失的信息
         6. 必须输出合法 JSON，不要输出 JSON 以外的任何内容
         
-        输出 JSON 格式：{{"answer": "...", "has_answer": true/false}}""")
+        输出 JSON 格式：{{"has_answer": true/false, "answer": "..."}}""")
         
         # 查长期事实
         namespace = ("user_facts", user_id)

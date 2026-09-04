@@ -25,9 +25,9 @@ from langchain_core.documents import Document
 def safe_parse(parser_output, parser_obj=None):
     """parser 降级"""
     try:
-        return parser_obj.parse(parser_output) if parser_obj else {"answer": parser_output, "has_answer": True}
+        return parser_obj.parse(parser_output) if parser_obj else { "has_answer": True, "answer": parser_output }
     except OutputParserException:
-        return {"answer": "LLM 输出 JSON 格式异常，无法解析", "has_answer": False}
+        return { "has_answer": False, "answer": "LLM 输出 JSON 格式异常，无法解析" }
 
 # 拒答检查
 def check_no_relevant(parallel_output: dict) -> dict:
