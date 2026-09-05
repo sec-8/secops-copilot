@@ -21,7 +21,7 @@ from pathlib import Path
 from app.config import settings
 from typing import List
 from langchain_core.documents import Document
-# Parser 降级方案，暂未启用     
+# Parser 降级方案
 def safe_parse(parser_output, parser_obj=None):
     """parser 降级"""
     try:

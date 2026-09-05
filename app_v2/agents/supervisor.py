@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 IP_PATTERN = re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b")
 
 # 规则2：关键词清单
-TOOL_KEYWORDS = ["解析日志", "parse_log", "解析这条"]  # parse_log_fields
+TOOL_KEYWORDS = ["解析日志", "parse_log", "解析这条", "告警"]  # parse_log_fields
 MEMORY_KEYWORDS = ["记住", "我叫", "叫什么", "我叫什么", "我是", "是我"]  # memory
 # 顶部加常量
 RAG_FALLBACK_KW = ["ping", "DNS", "TCP", "UDP", "三次握手"]  # 模糊网络概念 → rag

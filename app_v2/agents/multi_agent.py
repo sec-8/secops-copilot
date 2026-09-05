@@ -123,7 +123,11 @@ async def tool_node(state: MultiAgentState) -> dict:
             from langgraph.prebuilt import create_react_agent
             llm = RouterChatModel(temperature=0)
             agent = create_react_agent(llm, tools)
-            result = await agent.ainvoke({"messages": [("user", question)]})
+            try:
+                result = await asyncio.wait_for(agent.ainvoke({"messages": [("user", question)]}), timeout=60)
+            except asyncio.TimeoutError:
+                timeout_answer = "工具调用超时（60s），请稍后重试或换个问法。"
+                return {"final_answer": timeout_answer, "messages": [AIMessage(content=timeout_answer)]}
             messages = result["messages"]
             # 最后一条 AI 消息作为 final_answer
             final_answer = ""
@@ -530,11 +534,19 @@ async def _tool_stream(question: str, user_id: str, session_id: str):
                     tool_span.set_tag("args", tool_args)
                     tool_span.set_tag("call_id", call_id)
                     
-                    result = await tool.ainvoke(tool_args)
+                    timeout_hit = False
+                    try:
+                        result = await asyncio.wait_for(tool.ainvoke(tool_args), timeout=30)
+                    except asyncio.TimeoutError:
+                        timeout_hit = True
+                        result = ""
                     
-                    tool_span.set_tag("status", "success" if result else "empty")
+                    tool_span.set_tag("status", "timeout" if timeout_hit else ("success" if result else "empty"))
                     
-                    result_str = str(result)[:500] if result else "无结果"
+                    if timeout_hit:
+                        result_str = "工具调用超时（30s），MCP 服务无响应"
+                    else:
+                        result_str = str(result)[:500] if result else "无结果"
                     
                     # 3. tool_result 事件
                     yield {
