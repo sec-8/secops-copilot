@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-RAGAS 评测脚本
---------------------------------------------------
-思路（拆开评，别互相污染）：
-  - 有据题（ground_truth != 拒答话术）→ 跑 RAGAS 三指标（faithfulness / answer_relevancy / context_precision）
-  - 无据题（ground_truth == 拒答话术）→ 单独统计「拒答命中率」（has_answer==False 才算对）
-
-裁判 LLM：Ark（ark-code-latest，走 OPENAI 档位）—— 聪明，判对错
-Embedding：本地 Ollama nomic-embed-text —— 与生产向量库同一把尺子，一致性优先 + 免费
-"""
+"""RAGAS 评测脚本"""
 import sys
 import json
 import argparse
@@ -59,7 +50,7 @@ def load_dataset(path: Path):
 
 
 def build_judge_and_embedding():
-    """裁判 LLM = Ark；Embedding = 本地 Ollama nomic-embed-text"""
+    """裁判 LLM = Ark；Embedding = 本地 Ollama"""
     # --- 裁判 LLM：Ark（OPENAI 档位）---
     judge_llm = ChatOpenAI(
         model=settings.RAGAS_JUDGE_MODEL,        

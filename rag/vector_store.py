@@ -2,23 +2,25 @@
 import lancedb
 from typing import List, Dict
 from pathlib import Path
-import requests
+from langchain_openai import OpenAIEmbeddings
+from app.config import settings
 
-DEFAULT_EMBEDDING_URL = "http://localhost:11434/api/embeddings"   # 模型链接
-DEFAULT_EMBEDDING_MODEL = "nomic-embed-text" # 模型链接名字
 DEFAULT_TABLE_NAME = "secops_knowledge" # 表名
 
 class LanceDBVectorStore:
     def __init__( # “接收外部传参，并把这些参数挂载到当前实例（self）身上”的初始化入口。
         self,
         db_path: Path,
-        embedding_url: str = DEFAULT_EMBEDDING_URL,
-        embedding_model:str = DEFAULT_EMBEDDING_MODEL,
+        embedder: OpenAIEmbeddings | None = None,
         table_name:str = DEFAULT_TABLE_NAME
     ):
         self.db_path = db_path
-        self.embedding_url = embedding_url
-        self.embedding_model = embedding_model
+        self.embedder = embedder or OpenAIEmbeddings(
+            model=settings.EMBED_MODEL,   
+            api_key=settings.EMBED_API_KEY,     
+            base_url=settings.EMBED_BASE_URL,    
+            check_embedding_ctx_length=False,
+        )
         self.table_name = table_name
         
         self.db = None
@@ -37,14 +39,8 @@ class LanceDBVectorStore:
             
     def embed_text(self, text: str) -> List[float]:
         """调用 Ollma 接口获取文本 embedding"""
-        payload = {
-            "model": self.embedding_model,
-            "prompt": text
-        }
-        resp = requests.post(self.embedding_url, json=payload)
-        resp.raise_for_status() # 出错抛异常
-        data = resp.json()
-        return data["embedding"] # Ollama 返回格式就是 {"embedding": [ 数组 ]}
+        resp = self.embedder.embed_query(text) # LangChain 里单文本该用 embed_query, 多文本用 embed_documents
+        return resp 
     
     def add_chunks(self, chunked_docs: List[Dict]) -> None:
         # 把切好的 chunks 加入向量库
@@ -75,7 +71,7 @@ class LanceDBVectorStore:
     def search(self, query: str, top_k: int = 5) -> List[Dict]:
         query_embedding = self.embed_text(query)
         # 搜索转 pandas 再转字典列表
-        # query_embedding：先把「问题」这段文字，用 embedding 模型转成一个 1024 维的向量（一串数字）
+        # query_embedding：先把「问题」这段文字，用 embedding 模型转成一个 768 维的向量（一串数字）
         # .search(query_embedding)：拿这个向量，去库里跟每个 chunk 的向量算距离
         # .metric("cosine")：用余弦距离算 —— 两个向量方向越接近，距离越小
         
