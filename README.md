@@ -64,10 +64,14 @@ docker compose up
 graph TB
     A[用户输入] --> B[FastAPI + SSE 端点]
     B --> C{Supervisor 分派}
-    C -->|规则 fast path| D1[RAG Agent]
-    C -->|LLM slow path| D2[Tool Agent]
-    C -->|兜底| D3[Memory Agent]
-    C -->|无规则命中| D1
+    C -->|规则命中·IP/日志| D2[Tool Agent]
+    C -->|规则命中·记忆指令| D3[Memory Agent]
+    C -->|规则命中·安全概念| D1[RAG Agent]
+    C -->|模糊| L{LLM 分类}
+    L --> D1
+    L --> D2
+    L --> D3
+    L -->|分类失败兜底| D1
     D1 --> E1[混合检索 RRF + decompose]
     D1 --> E2[短期 Memory Redis 24h]
     D1 --> E3[长期 Memory PG facts]

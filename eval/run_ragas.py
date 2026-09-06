@@ -62,18 +62,16 @@ def build_judge_and_embedding():
     """裁判 LLM = Ark；Embedding = 本地 Ollama nomic-embed-text"""
     # --- 裁判 LLM：Ark（OPENAI 档位）---
     judge_llm = ChatOpenAI(
-        model="deepseek-v4-flash",          # ark-code-latest
-        # api_key=settings.DEEPSEEK_API_KEY,
-        # base_url=settings.DEEPSEEK_BASE_URL,  
-        api_key=settings.OPENAI_API_KEY,
-        base_url=settings.OPENAI_BASE_URL,
+        model=settings.RAGAS_JUDGE_MODEL,        
+        api_key=settings.RAGAS_JUDGE_KEY,
+        base_url=settings.RAGAS_JUDGE_URL,
         temperature=0,
     )
     # --- Embedding：本地 Ollama（OpenAI 兼容端点 /v1）---
     judge_emb = OpenAIEmbeddings(
-        model="nomic-embed-text",
-        api_key="ollama",                     # 占位，本地不校验
-        base_url=settings.OLLAMA_BASE_URL,    # http://localhost:11434/v1
+        model=settings.EMBED_MODEL,            
+        api_key=settings.EMBED_API_KEY,     
+        base_url=settings.EMBED_BASE_URL,    
         check_embedding_ctx_length=False,     # 关掉 openai 的 tiktoken 长度检查（本地模型不吃这套）
     )
     return LangchainLLMWrapper(judge_llm), LangchainEmbeddingsWrapper(judge_emb)

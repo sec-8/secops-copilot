@@ -13,6 +13,15 @@ class Settings:
     DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash")
     OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:8b")
+    # Embedding模型
+    EMBED_MODEL = os.getenv("EMBED_MODEL", "nomic-embed-text")
+    EMBED_BASE_URL = os.getenv("EMBED_BASE_URL", "http://localhost:11434/v1")
+    EMBED_API_KEY = os.getenv("EMBED_API_KEY", "ollama")
+    # Ragas裁判模型
+    RAGAS_JUDGE_MODEL = os.getenv("RAGAS_JUDGE_MODEL", "ragas-judge")
+    RAGAS_JUDGE_KEY = os.getenv("RAGAS_JUDGE_KEY", "")
+    RAGAS_JUDGE_URL = os.getenv("RAGAS_JUDGE_URL", "https://api.openai.com/v1")
+    # Ragas裁判模型
     # 工具治理：dry-run 模式（模拟执行）
     DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
     # Langfuse 
